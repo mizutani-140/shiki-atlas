@@ -41,6 +41,11 @@ jobs:
       - name: Unit tests
         run: npm test
 
+      # The task's declared Shiki `test_command`. Without this the loop-observed
+      # TDD gate and CI would verify different things, leaving tests/ dead in CI.
+      - name: Task TDD gate command
+        run: python3 -m unittest discover -s tests
+
       - name: Build site
         run: npm run build
 

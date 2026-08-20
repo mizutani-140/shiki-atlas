@@ -7,9 +7,12 @@ committed `src/generated/shiki-flow.mmd` is a faithful, integral view of the rea
 `.shiki` mirror: every real Goal / Task / DAG node appears, no phantom ids are
 drawn, and the MergeGate required checks are present.
 
-Because it reads only stable planning artifacts (goals, tasks, dag, config) and
-never the volatile ledger stream / task status, it stays green after the
-autonomous goal loop appends evidence and syncs it onto the PR branch.
+Scope of its stability: it reads only planning artifacts (goals, tasks, dag,
+config) and never the volatile ledger stream or task status, so appending loop
+evidence and syncing it onto the PR branch does NOT turn it red. It is not
+stable against planning changes, and deliberately so — adding a goal, task, or
+DAG node without regenerating the diagram SHOULD fail here. That is the drift
+this gate exists to catch, not a flake.
 """
 
 from __future__ import annotations

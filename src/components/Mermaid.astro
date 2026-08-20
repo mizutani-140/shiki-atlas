@@ -17,23 +17,52 @@ const { code, title } = Astro.props;
 <script>
   import mermaid from 'mermaid';
 
-  const isDark =
+  const nodes = Array.from(document.querySelectorAll<HTMLElement>('pre.mermaid'));
+  // mermaid.run() REPLACES each element's content with the rendered SVG, so a
+  // later re-render (theme toggle) needs the original diagram text stashed first.
+  const sources = new WeakMap<HTMLElement, string>();
+  for (const node of nodes) sources.set(node, node.textContent ?? '');
+
+  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)');
+  // Starlight writes an explicit choice to `data-theme`; the OS preference only
+  // applies while no explicit choice is set.
+  const isDark = () =>
     document.documentElement.dataset.theme === 'dark' ||
-    (!document.documentElement.dataset.theme &&
-      window.matchMedia('(prefers-color-scheme: dark)').matches);
+    (!document.documentElement.dataset.theme && prefersDark.matches);
 
-  mermaid.initialize({
-    startOnLoad: false,
-    securityLevel: 'strict',
-    theme: isDark ? 'dark' : 'default',
-  });
+  let rendered: boolean | null = null;
 
-  try {
-    await mermaid.run({ querySelector: '.mermaid' });
-  } catch (error) {
-    // Leave the raw diagram source visible rather than blanking the page.
-    console.error('Mermaid rendering failed', error);
+  async function render() {
+    const dark = isDark();
+    if (dark === rendered) return;
+    rendered = dark;
+    mermaid.initialize({
+      startOnLoad: false,
+      securityLevel: 'strict',
+      theme: dark ? 'dark' : 'default',
+    });
+    for (const node of nodes) {
+      node.textContent = sources.get(node) ?? '';
+      node.removeAttribute('data-processed');
+    }
+    try {
+      await mermaid.run({ nodes });
+    } catch (error) {
+      // Leave the raw diagram source visible rather than blanking the page.
+      console.error('Mermaid rendering failed', error);
+      for (const node of nodes) node.textContent = sources.get(node) ?? '';
+    }
   }
+
+  await render();
+
+  // Re-render on the Starlight theme toggle and on OS-level changes, so the
+  // diagram never sits in the opposite theme to the page around it.
+  new MutationObserver(() => void render()).observe(document.documentElement, {
+    attributes: true,
+    attributeFilter: ['data-theme'],
+  });
+  prefersDark.addEventListener('change', () => void render());
 </script>
 
 <style>
