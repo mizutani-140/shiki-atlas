@@ -1,0 +1,42 @@
+{
+  "claude_code_oauth_secret": {
+    "checked": true,
+    "configured": false,
+    "name": "CLAUDE_CODE_OAUTH_TOKEN",
+    "remediation": "Run `shiki secret set-claude --repo mizutani-140/shiki-atlas` to mint (via `claude setup-token`), verify, and set the secret in one step. Alternatively create the token with `claude setup-token`, export it as CLAUDE_CODE_OAUTH_TOKEN, then run `gh secret set CLAUDE_CODE_OAUTH_TOKEN --repo mizutani-140/shiki-atlas` or rerun Shiki init/start."
+  },
+  "created_at": "2026-08-20T08:57:30+00:00",
+  "dispatchable_task_ids": [
+    "T-20260820T085729054418Z-368672b8"
+  ],
+  "goal_id": "G-20260820T085729053581Z-595cfc78",
+  "handoffs": [
+    ".shiki/handoffs/T-20260820T085729054418Z-368672b8-task.md"
+  ],
+  "id": "START-20260820T085729925645Z-08feca60",
+  "issues": [
+    {
+      "issue": 1,
+      "ledger_id": "L-20260820T085729923031Z-04011ca0",
+      "task_id": "T-20260820T085729054418Z-368672b8",
+      "url": "https://github.com/mizutani-140/shiki-atlas/issues/1"
+    }
+  ],
+  "plan_id": "P-20260820T085729052749Z-e6ce760a",
+  "project_name": "Shiki Atlas",
+  "questions": [
+    "GitHub repo slug (OWNER/REPO)",
+    "Project name",
+    "Goal title",
+    "Outcome / success result",
+    "Completion conditions",
+    "Non-goals",
+    "First vertical-slice task title",
+    "First task scope",
+    "First task acceptance checks",
+    "First task locks"
+  ],
+  "repo": "mizutani-140/shiki-atlas",
+  "run_id": "RUN-20260820T085729056934Z-a993a1a5",
+  "skills_dir": "/Users/kio.mizutani/Documents/lead-os/skills/engineering"
+}

@@ -1,0 +1,17 @@
+{
+  "blocked_task_ids": {},
+  "created_at": "2026-08-20T08:57:29+00:00",
+  "dag": ".shiki/dag/G-20260820T085729053581Z-595cfc78.json",
+  "dispatchable_task_ids": [
+    "T-20260820T085729054418Z-368672b8"
+  ],
+  "goal_id": "G-20260820T085729053581Z-595cfc78",
+  "id": "RUN-20260820T085729056934Z-a993a1a5",
+  "plan_id": "P-20260820T085729052749Z-e6ce760a",
+  "task_ids": [
+    "T-20260820T085729054418Z-368672b8"
+  ],
+  "worktrees": [
+    ".shiki/worktrees/T-20260820T085729054418Z-368672b8.json"
+  ]
+}

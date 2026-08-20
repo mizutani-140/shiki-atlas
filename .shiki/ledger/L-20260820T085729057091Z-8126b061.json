@@ -1,0 +1,14 @@
+{
+  "actor": "shiki-cli",
+  "evidence": [
+    ".shiki/runs/RUN-20260820T085729056934Z-a993a1a5.json",
+    ".shiki/dag/G-20260820T085729053581Z-595cfc78.json"
+  ],
+  "goal_id": "G-20260820T085729053581Z-595cfc78",
+  "id": "L-20260820T085729057091Z-8126b061",
+  "links": [],
+  "summary": "Shiki run RUN-20260820T085729056934Z-a993a1a5 created 1 task(s) from plan P-20260820T085729052749Z-e6ce760a",
+  "task_id": null,
+  "timestamp": "2026-08-20T08:57:29+00:00",
+  "type": "handoff"
+}
