@@ -1,0 +1,53 @@
+---
+// Client-side Mermaid renderer. The diagram text is emitted as the text content
+// of a <pre class="mermaid"> element; the bundled script renders it to SVG in
+// the browser, so `astro build` needs no headless browser.
+interface Props {
+  code: string;
+  title?: string | undefined;
+}
+const { code, title } = Astro.props;
+---
+
+<figure class="mermaid-figure">
+  {title && <figcaption class="mermaid-caption">{title}</figcaption>}
+  <pre class="mermaid">{code}</pre>
+</figure>
+
+<script>
+  import mermaid from 'mermaid';
+
+  const isDark =
+    document.documentElement.dataset.theme === 'dark' ||
+    (!document.documentElement.dataset.theme &&
+      window.matchMedia('(prefers-color-scheme: dark)').matches);
+
+  mermaid.initialize({
+    startOnLoad: false,
+    securityLevel: 'strict',
+    theme: isDark ? 'dark' : 'default',
+  });
+
+  try {
+    await mermaid.run({ querySelector: '.mermaid' });
+  } catch (error) {
+    // Leave the raw diagram source visible rather than blanking the page.
+    console.error('Mermaid rendering failed', error);
+  }
+</script>
+
+<style>
+  .mermaid-figure {
+    margin: 1.5rem 0;
+    overflow-x: auto;
+  }
+  .mermaid-caption {
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+  }
+  .mermaid {
+    /* Keep the pre readable before hydration; hidden overflow handled by figure. */
+    text-align: center;
+    line-height: 1.2;
+  }
+</style>

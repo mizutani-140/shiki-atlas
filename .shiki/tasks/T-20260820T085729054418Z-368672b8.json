@@ -20,7 +20,7 @@
     "L-20260820T085729923031Z-04011ca0"
   ],
   "locks": [
-    "path:**/*"
+    "path:**"
   ],
   "non_goals": [],
   "required_skills": [
