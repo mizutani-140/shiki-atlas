@@ -7,8 +7,8 @@
     "path:**/*"
   ],
   "path": "/Users/kio.mizutani/.worktrees/shiki-t-20260820t085729054418z-368672b8-starligh",
-  "pr": null,
+  "pr": 2,
   "runtime": "claude-code",
-  "state": "registered",
+  "state": "active",
   "task_id": "T-20260820T085729054418Z-368672b8"
 }
