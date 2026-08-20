@@ -6,7 +6,7 @@ source_of_truth:
 defaults:
   branch_prefix: shiki
   automatic_repair_limit: 3
-  required_review: true
+  required_review: false
   required_ledger_evidence: true
 guardian:
   labels:
