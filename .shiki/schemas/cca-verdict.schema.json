@@ -1,0 +1,83 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://shiki.local/schemas/cca-verdict.schema.json",
+  "type": "object",
+  "required": [
+    "verdict",
+    "summary",
+    "goal_id",
+    "task_id",
+    "pr",
+    "head_sha",
+    "can_merge",
+    "checklist",
+    "acceptance",
+    "mergegate",
+    "confidence"
+  ],
+  "properties": {
+    "verdict": {
+      "enum": [
+        "complete",
+        "repair_required",
+        "blocked",
+        "needs_guardian",
+        "insufficient_evidence"
+      ]
+    },
+    "summary": { "type": "string" },
+    "goal_id": { "type": "string" },
+    "task_id": { "type": "string" },
+    "pr": { "type": "integer" },
+    "head_sha": { "type": "string" },
+    "can_merge": { "type": "boolean" },
+    "blocking_reason": { "type": "string" },
+    "checklist": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "status", "blocking"],
+        "properties": {
+          "id": { "type": "string" },
+          "status": {
+            "type": "string",
+            "enum": ["pass", "fail", "insufficient_evidence", "not_applicable"]
+          },
+          "blocking": { "type": "boolean" },
+          "evidence": { "type": "string" },
+          "reason": { "type": "string" }
+        },
+        "additionalProperties": true
+      }
+    },
+    "acceptance": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["criterion", "status", "evidence"],
+        "properties": {
+          "criterion": { "type": "string", "minLength": 1 },
+          "status": {
+            "type": "string",
+            "enum": ["pass", "fail", "insufficient_evidence", "not_applicable"]
+          },
+          "evidence": {
+            "type": "array",
+            "items": { "type": "string", "minLength": 1 }
+          },
+          "reason": { "type": "string" }
+        },
+        "additionalProperties": true
+      }
+    },
+    "mergegate": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "repair_packet": {
+      "type": ["object", "null"],
+      "additionalProperties": true
+    },
+    "confidence": { "type": "number" }
+  }
+}

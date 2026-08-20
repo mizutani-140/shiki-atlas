@@ -1,0 +1,61 @@
+name: Shiki MergeGate
+
+on:
+  pull_request:
+    types:
+      - opened
+      - synchronize
+      - reopened
+      - ready_for_review
+      - edited
+      - labeled
+      - unlabeled
+  workflow_dispatch:
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+permissions:
+  contents: read
+  pull-requests: read
+  issues: read
+  checks: read
+  actions: read
+
+jobs:
+  mergegate:
+    name: MergeGate metadata check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - name: Validate Shiki artifacts
+        run: python3 scripts/validate_shiki.py
+
+      - name: Prepare PR context
+        if: github.event_name == 'pull_request'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          rm -rf .shiki/gha
+          mkdir -p .shiki/gha
+          gh pr view "$PR_NUMBER" --json number,title,body,author,headRefName,baseRefName,headRefOid,labels,files,reviews,reviewDecision,statusCheckRollup > .shiki/gha/pr.json
+          base_ref="$(jq -r '.baseRefName' .shiki/gha/pr.json)"
+          git fetch origin "$base_ref"
+          git diff --name-only "origin/${base_ref}...HEAD" > .shiki/gha/changed-files.txt
+          git diff --name-status "origin/${base_ref}...HEAD" > .shiki/gha/changed-files-status.txt
+
+      - name: MergeGate metadata check
+        env:
+          EXPECTED_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          python3 scripts/mergegate_check.py \
+            --changed-files-status .shiki/gha/changed-files-status.txt \
+            --expected-head-sha "$EXPECTED_HEAD_SHA" \
+            --allow-missing-cca

@@ -1,0 +1,70 @@
+{
+  "applied": [
+    {
+      "actor": "codex-front",
+      "applied_at": "2026-06-04T10:30:00Z",
+      "evidence": [
+        ".shiki/manifest.json exists.",
+        ".shiki/tasks, .shiki/goals, and .shiki/ledger exist.",
+        "G-0012 exists.",
+        "Known prior state is accepted as the baseline without rewriting historical records."
+      ],
+      "id": "M-20260604-0001-baseline",
+      "status": "applied",
+      "summary": "Accepted existing post-P1.3.5 Shiki layout as the migration baseline."
+    },
+    {
+      "actor": "codex-front",
+      "applied_at": "2026-06-04T12:20:00Z",
+      "evidence": [
+        ".shiki/guardian-policy.json exists.",
+        ".shiki/manifest.json includes .shiki/guardian-policy.json.",
+        "Guardian policy validation is enforced by scripts/validate_shiki.py."
+      ],
+      "id": "M-20260604-0002-guardian-policy",
+      "status": "applied",
+      "summary": "Accepted Guardian policy config as tracked Shiki governance state."
+    },
+    {
+      "actor": "codex-front",
+      "applied_at": "2026-06-05T04:15:00Z",
+      "evidence": [
+        ".shiki/manifest.json defines state_classes and state_class_policies.",
+        "Manifest directories and files declare state_class.",
+        "State class validation is enforced by scripts/validate_shiki.py.",
+        "No historical Shiki state rewrite was performed."
+      ],
+      "id": "M-20260605-0002-state-classes",
+      "status": "applied",
+      "summary": "Accepted explicit .shiki state class classification without rewriting historical state."
+    },
+    {
+      "actor": "shiki-cli",
+      "applied_at": "2026-06-12T06:33:30Z",
+      "evidence": [
+        "Plan ingest/run/daemon/smoke require spec_freeze.status=frozen (ADR 0009).",
+        "Backfilled: P-0001.json.",
+        "Already frozen: none.",
+        "grill_with_docs blocks were preserved unchanged (additive contract)."
+      ],
+      "id": "M-20260612-0001-spec-freeze",
+      "status": "applied",
+      "summary": "Backfilled spec_freeze into 1 stored plan(s); 0 already frozen."
+    },
+    {
+      "actor": "shiki-cli",
+      "applied_at": "2026-06-13T01:28:51Z",
+      "evidence": [
+        ".shiki/manifest.json declares .shiki/memories (mirror, create_on_demand).",
+        "manifest declaration present: True.",
+        ".shiki/memories directory ensured: True.",
+        "Memory audit trail is recorded in the ledger as memory-transition events."
+      ],
+      "id": "M-20260613-0001-memories",
+      "status": "applied",
+      "summary": "Accepted .shiki/memories as an on-demand mirror directory for the Memory Loop (proposal 0001 v2)."
+    }
+  ],
+  "source_of_truth": "Repository-local Shiki migration state. GitHub operational state remains authoritative.",
+  "version": 1
+}

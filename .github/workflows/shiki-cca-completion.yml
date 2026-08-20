@@ -1,0 +1,461 @@
+name: Shiki CCA Completion
+
+on:
+  pull_request:
+    types:
+      - opened
+      - synchronize
+      - reopened
+      - ready_for_review
+      - edited
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: Pull request number to judge.
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+  checks: write
+  actions: read
+  id-token: write
+
+jobs:
+  cca:
+    name: CCA verdict
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.draft == false
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - name: Validate Shiki artifacts
+        run: python3 scripts/validate_shiki.py
+
+      - name: Prepare CCA context
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number || inputs.pr_number }}
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          rm -rf .shiki/gha
+          mkdir -p .shiki/gha
+          gh pr view "$PR_NUMBER" --json number,title,body,author,headRefName,baseRefName,headRefOid,labels,files,reviews,reviewDecision,statusCheckRollup > .shiki/gha/pr.json
+          base_ref="$(jq -r '.baseRefName' .shiki/gha/pr.json)"
+          git fetch origin "$base_ref" --depth=1
+          git diff --name-only "origin/${base_ref}...HEAD" > .shiki/gha/changed-files.txt
+          git diff --name-status "origin/${base_ref}...HEAD" > .shiki/gha/changed-files-status.txt
+
+          # Deterministic Guardian-approval signal for CCA-08. The CCA must not
+          # judge Guardian approval by LLM-reading raw comments; it reads the
+          # result of the SAME authoritative evaluate_guardian_approval the
+          # MergeGate policy check uses (recognizes label/review/comment OR an
+          # external AI guardian review artifact, ADR 0010). The policy check
+          # remains the authoritative gate.
+          gh api "repos/${REPOSITORY}/issues/${PR_NUMBER}/comments" > .shiki/gha/live-guardian-comments.json || echo "[]" > .shiki/gha/live-guardian-comments.json
+          gh api "repos/${REPOSITORY}/issues/${PR_NUMBER}/events" > .shiki/gha/live-guardian-events.json || echo "[]" > .shiki/gha/live-guardian-events.json
+          gh api "repos/${REPOSITORY}/issues/${PR_NUMBER}/timeline" -H "Accept: application/vnd.github+json" > .shiki/gha/live-guardian-timeline.json || echo "[]" > .shiki/gha/live-guardian-timeline.json
+          python3 scripts/guardian_approval_signal.py \
+            --pr-json .shiki/gha/pr.json \
+            --guardian-policy .shiki/guardian-policy.json \
+            --guardian-comments .shiki/gha/live-guardian-comments.json \
+            --guardian-events .shiki/gha/live-guardian-events.json \
+            --guardian-timeline .shiki/gha/live-guardian-timeline.json \
+            --expected-repository "${REPOSITORY}" \
+            --shiki-root . \
+            --output .shiki/gha/guardian-approval.json
+          echo "::group::guardian-approval signal"
+          cat .shiki/gha/guardian-approval.json
+          echo "::endgroup::"
+
+      - name: Prepare CCA transport schema
+        id: schema
+        shell: bash
+        run: |
+          cat > "$RUNNER_TEMP/cca-transport.schema.json" <<'JSON'
+          {
+            "type": "object",
+            "required": [
+              "verdict",
+              "summary",
+              "goal_id",
+              "task_id",
+              "pr",
+              "head_sha",
+              "can_merge",
+              "checklist",
+              "acceptance",
+              "mergegate",
+              "confidence"
+            ],
+            "properties": {
+              "verdict": {
+                "enum": [
+                  "complete",
+                  "repair_required",
+                  "blocked",
+                  "needs_guardian",
+                  "insufficient_evidence"
+                ]
+              },
+              "summary": { "type": "string" },
+              "goal_id": { "type": "string" },
+              "task_id": { "type": "string" },
+              "pr": { "type": "integer" },
+              "head_sha": { "type": "string" },
+              "can_merge": { "type": "boolean" },
+              "blocking_reason": { "type": "string" },
+              "checklist": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              },
+              "acceptance": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              },
+              "mergegate": {
+                "type": "object",
+                "additionalProperties": true
+              },
+              "repair_packet": {
+                "type": ["object", "null"],
+                "additionalProperties": true
+              },
+              "confidence": { "type": "number" }
+            },
+            "additionalProperties": true
+          }
+          JSON
+
+          {
+            echo "json<<EOF"
+            jq -c . "$RUNNER_TEMP/cca-transport.schema.json"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Run CCA
+        id: cca
+        uses: anthropics/claude-code-action@v1
+        with:
+          github_token: ${{ github.token }}
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          prompt: |
+            REPOSITORY: ${{ github.repository }}
+            PR_NUMBER: ${{ github.event.pull_request.number || inputs.pr_number }}
+            HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+
+            Run the Shiki CCA Completion Check using:
+            - .github/prompts/cca-completion-check.md
+            - AGENTS.md
+            - CLAUDE.md
+            - CONTEXT.md
+            - docs/agents/checklists.md
+            - docs/agents/completion-check-agent.md
+            - docs/agents/runtime-auth-model.md
+            - .shiki/gha/pr.json
+            - .shiki/gha/changed-files.txt
+            - .shiki/gha/guardian-approval.json
+
+            For Guardian approval (CCA-08), do NOT interpret raw PR comments
+            yourself. Read .shiki/gha/guardian-approval.json (the deterministic
+            result of the authoritative evaluate_guardian_approval). If
+            "required" is false, CCA-08 is not applicable. If "required" is true
+            and "approved" is true, CCA-08 is satisfied by the recorded authority
+            in "sources"/"ai_reviewers" (an external AI guardian review is a
+            valid authority per ADR 0010; record it as such, never as a human
+            approver). If "required" is true and "approved" is false, return
+            needs_guardian.
+
+            Judge completion only. Do not edit production code.
+            Do not require this CCA verdict check, the downstream MergeGate policy
+            check, or advisory Claude review to have completed before returning
+            the CCA verdict.
+            Return structured JSON matching .shiki/schemas/cca-verdict.schema.json.
+          claude_args: |
+            --append-system-prompt "You are Shiki CCA. Judge completion only. Do not edit production code. Non-complete verdicts must include precise next actions."
+            --json-schema '${{ steps.schema.outputs.json }}'
+            --max-turns 15
+            --allowedTools "Read,Glob,Grep,Bash(git diff:*),Bash(git status:*),Bash(gh pr view:*),Bash(gh pr diff:*)"
+
+      - name: Enforce CCA verdict
+        env:
+          STRUCTURED_OUTPUT: ${{ steps.cca.outputs.structured_output }}
+        run: python3 scripts/enforce_cca_verdict.py
+
+      - name: CCA Review Bridge
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          BOT_LOGIN: github-actions[bot]
+          PR_NUMBER: ${{ github.event.pull_request.number || inputs.pr_number }}
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+
+          mkdir -p .shiki/gha
+
+          echo "::group::CCA Review Bridge diagnostics"
+          echo "Repository: ${REPOSITORY}"
+          echo "PR_NUMBER: ${PR_NUMBER}"
+
+          bot_login="${BOT_LOGIN}"
+          echo "Authenticated GitHub login: ${bot_login}"
+
+          pr_payload="$(gh api "repos/${REPOSITORY}/pulls/${PR_NUMBER}")"
+          author_login="$(jq -r '.user.login // empty' <<<"$pr_payload")"
+          head_sha="$(jq -r '.head.sha // empty' <<<"$pr_payload")"
+
+          echo "PR author login: ${author_login}"
+          echo "PR head SHA: ${head_sha}"
+
+          if [ -z "$bot_login" ] || [ -z "$author_login" ] || [ -z "$head_sha" ]; then
+            echo "::error::Could not resolve CCA Review Bridge authenticated login, PR author, or PR head SHA."
+            exit 1
+          fi
+
+          if [ "$bot_login" = "$author_login" ]; then
+            echo "::error::Cannot submit CCA Review Bridge approval: authenticated identity is PR author: ${bot_login}"
+            exit 1
+          fi
+
+          echo "::group::Repository workflow permission diagnostics"
+          if gh api "repos/${REPOSITORY}/actions/permissions/workflow" > .shiki/gha/workflow-permissions.json 2> .shiki/gha/workflow-permissions.err; then
+            cat .shiki/gha/workflow-permissions.json
+          else
+            echo "::warning::Could not introspect repository workflow permissions with this token."
+            cat .shiki/gha/workflow-permissions.err || true
+          fi
+          echo "::endgroup::"
+
+          gh api "repos/${REPOSITORY}/pulls/${PR_NUMBER}/reviews" > .shiki/gha/reviews-before-bridge.json
+
+          already_approved="$(
+            jq -r --arg login "$bot_login" '
+              [.[]? | select((.state // "" | ascii_upcase) == "APPROVED") | select(.user.login == $login)] | length
+            ' .shiki/gha/reviews-before-bridge.json
+          )"
+
+          echo "Existing APPROVED reviews by ${bot_login}: ${already_approved}"
+
+          if [ "$already_approved" = "0" ]; then
+            review_body="Shiki CCA Review Bridge approval.
+
+          CCA verdict completed for this PR and Guardian approval evidence is present.
+
+          This automated GitHub Review approval exists to satisfy Shiki required_review policy for solo/self-running operation.
+
+          This is not advisory Claude review. It is emitted only after CCA verdict enforcement succeeds."
+
+            jq -nc \
+              --arg event "APPROVE" \
+              --arg body "$review_body" \
+              --arg commit_id "$head_sha" \
+              '{event: $event, body: $body, commit_id: $commit_id}' \
+              > .shiki/gha/create-review-request.json
+
+            echo "Submitting REST PR review approval as ${bot_login} for PR #${PR_NUMBER} at ${head_sha}"
+
+            http_status="$(
+              curl -sS \
+                -o .shiki/gha/create-review-response.json \
+                -w "%{http_code}" \
+                -X POST \
+                -H "Accept: application/vnd.github+json" \
+                -H "Authorization: Bearer ${GH_TOKEN}" \
+                -H "X-GitHub-Api-Version: 2022-11-28" \
+                "https://api.github.com/repos/${REPOSITORY}/pulls/${PR_NUMBER}/reviews" \
+                --data @.shiki/gha/create-review-request.json
+            )"
+
+            echo "REST create review HTTP status: ${http_status}"
+            cat .shiki/gha/create-review-response.json || true
+
+            case "$http_status" in
+              200|201)
+                echo "CCA Review Bridge REST approval submitted."
+                ;;
+              *)
+                echo "::error::CCA Review Bridge REST approval failed with HTTP ${http_status}."
+                echo "::error::If this is 403 after can_approve_pull_request_reviews=true, GITHUB_TOKEN cannot create the required approval in this repository context. Use a non-author reviewer bot token or GitHub App token."
+                exit 1
+                ;;
+            esac
+          else
+            echo "CCA Review Bridge approval already exists for ${bot_login}; skipping create-review call."
+          fi
+
+          sleep 5
+
+          gh api "repos/${REPOSITORY}/pulls/${PR_NUMBER}/reviews" > .shiki/gha/reviews-after-bridge.json
+
+          approved_after="$(
+            jq -r --arg login "$bot_login" '
+              [.[]? | select((.state // "" | ascii_upcase) == "APPROVED") | select(.user.login == $login)] | length
+            ' .shiki/gha/reviews-after-bridge.json
+          )"
+
+          echo "APPROVED reviews by ${bot_login} after bridge: ${approved_after}"
+
+          if [ "$approved_after" = "0" ]; then
+            echo "::error::CCA Review Bridge did not produce a visible APPROVED review."
+            exit 1
+          fi
+
+          gh pr view "$PR_NUMBER" \
+            --repo "$REPOSITORY" \
+            --json number,title,body,author,headRefName,baseRefName,headRefOid,labels,files,reviews,reviewDecision,statusCheckRollup \
+            > .shiki/gha/pr.json
+
+          echo "::endgroup::"
+
+      - name: Build CCA evidence manifest
+        run: |
+          python3 scripts/build_cca_evidence_manifest.py \
+            --repo "${{ github.repository }}" \
+            --pr "${{ github.event.pull_request.number || inputs.pr_number }}" \
+            --head-sha "${{ github.event.pull_request.head.sha || github.sha }}" \
+            --workflow-name "Shiki CCA Completion" \
+            --run-id "${{ github.run_id }}" \
+            --run-attempt "${{ github.run_attempt }}" \
+            --event-name "${{ github.event_name }}" \
+            --artifact-name "shiki-cca-evidence" \
+            --evidence-dir .shiki/gha \
+            --output .shiki/gha/cca-evidence-manifest.json
+
+      - name: Upload CCA evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: shiki-cca-evidence
+          path: .shiki/gha
+
+  mergegate:
+    name: MergeGate policy check
+    runs-on: ubuntu-latest
+    needs: cca
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - name: Reset CCA evidence runtime directory
+        run: |
+          rm -rf .shiki/gha
+          mkdir -p .shiki/gha
+
+      - name: Download CCA evidence
+        uses: actions/download-artifact@v4
+        with:
+          name: shiki-cca-evidence
+          path: .shiki/gha
+
+      - name: Validate Shiki artifacts
+        run: python3 scripts/validate_shiki.py
+
+      - name: Refresh live PR state
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number || inputs.pr_number }}
+        run: |
+          set -euo pipefail
+
+          rm -f .shiki/gha/live-pr.json .shiki/gha/live-changed-files.txt .shiki/gha/live-changed-files-status.txt
+          rm -f .shiki/gha/live-guardian-comments.json .shiki/gha/live-guardian-events.json .shiki/gha/live-guardian-timeline.json
+          rm -rf .shiki/gha/base-shiki
+          mkdir -p .shiki/gha/base-shiki
+
+          gh pr view "$PR_NUMBER" \
+            --json number,title,body,author,headRefName,baseRefName,headRefOid,labels,files,reviews,reviewDecision,statusCheckRollup \
+            > .shiki/gha/live-pr.json
+
+          gh api "repos/${{ github.repository }}/issues/${PR_NUMBER}/comments" \
+            > .shiki/gha/live-guardian-comments.json
+
+          gh api "repos/${{ github.repository }}/issues/${PR_NUMBER}/events" \
+            > .shiki/gha/live-guardian-events.json
+
+          gh api "repos/${{ github.repository }}/issues/${PR_NUMBER}/timeline" \
+            -H "Accept: application/vnd.github+json" \
+            > .shiki/gha/live-guardian-timeline.json
+
+          base_ref="$(jq -r '.baseRefName' .shiki/gha/live-pr.json)"
+          head_oid="$(jq -r '.headRefOid' .shiki/gha/live-pr.json)"
+
+          git fetch origin "$base_ref" --depth=1
+
+          git diff --name-only "origin/${base_ref}...HEAD" \
+            > .shiki/gha/live-changed-files.txt
+
+          git diff --name-status "origin/${base_ref}...HEAD" \
+            > .shiki/gha/live-changed-files-status.txt
+
+          git archive "origin/${base_ref}" .shiki | tar -x -C .shiki/gha/base-shiki || true
+
+          current_head="$(git rev-parse HEAD)"
+          if [ "$head_oid" != "$current_head" ]; then
+            echo "::error::Live PR headRefOid ${head_oid} does not match checked out HEAD ${current_head}"
+            exit 1
+          fi
+
+      - name: Enforce MergeGate
+        env:
+          EXPECTED_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+
+          # For a post_merge_reconcile PR, prove the referenced (base) PR merged
+          # so the mode cannot pass as a generic status-mutation. Read the base
+          # task's expected_pr and check its merge state; pass it as --merged-prs.
+          MERGED_PRS=""
+          body="$(jq -r '.body // ""' .shiki/gha/live-pr.json)"
+          if printf '%s' "$body" | grep -q '<!-- shiki:post_merge_reconcile -->'; then
+            # Resolve the task id with the SAME semantics mergegate_check.py uses
+            # (TASK_ID = T-<4+ digits> OR T-<timestamp>-<hex>, first match), so the
+            # merge proof binds to the exact task the validator mutates. The
+            # validator also rejects a body with more than one task id, so this
+            # first-match can never disagree with it.
+            task_id="$(printf '%s' "$body" | grep -oE 'T-([0-9]{4,}|[0-9]{8}T[0-9]{12}Z-[0-9a-f]{8})' | head -1 || true)"
+            base_task=".shiki/gha/base-shiki/.shiki/tasks/${task_id}.json"
+            if [ -n "$task_id" ] && [ -f "$base_task" ]; then
+              base_pr="$(jq -r '.expected_pr // empty' "$base_task")"
+              if [ -n "$base_pr" ]; then
+                state="$(gh pr view "$base_pr" --repo "$REPOSITORY" --json state -q .state 2>/dev/null || echo UNKNOWN)"
+                if [ "$state" = "MERGED" ]; then
+                  MERGED_PRS="$base_pr"
+                fi
+              fi
+            fi
+          fi
+
+          python3 scripts/mergegate_check.py \
+            --pr-json .shiki/gha/live-pr.json \
+            --changed-files .shiki/gha/live-changed-files.txt \
+            --changed-files-status .shiki/gha/live-changed-files-status.txt \
+            --cca-verdict .shiki/gha/cca-verdict.json \
+            --cca-evidence-manifest .shiki/gha/cca-evidence-manifest.json \
+            --expected-repository "${{ github.repository }}" \
+            --expected-head-sha "$EXPECTED_HEAD_SHA" \
+            --base-shiki .shiki/gha/base-shiki/.shiki \
+            --merged-prs "$MERGED_PRS" \
+            --guardian-policy .shiki/guardian-policy.json \
+            --guardian-comments .shiki/gha/live-guardian-comments.json \
+            --guardian-events .shiki/gha/live-guardian-events.json \
+            --guardian-timeline .shiki/gha/live-guardian-timeline.json
