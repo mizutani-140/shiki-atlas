@@ -1,0 +1,16 @@
+{
+  "actor": "shiki-cli",
+  "evidence": [
+    ".shiki/tasks/T-20260820T085729054418Z-368672b8.json",
+    ".shiki/locks/T-20260820T085729054418Z-368672b8.json"
+  ],
+  "goal_id": "G-20260820T085729053581Z-595cfc78",
+  "id": "L-20260821T005538341598Z-b75c351f",
+  "links": [
+    "https://github.com/mizutani-140/shiki-atlas/pull/3"
+  ],
+  "summary": "Autonomous closeout PR #3 (/pull/3): task done + lock released + goal complete (scorecard) pushed to main by the goal loop (ADR 0012).",
+  "task_id": "T-20260820T085729054418Z-368672b8",
+  "timestamp": "2026-08-21T00:55:38+00:00",
+  "type": "lock"
+}
