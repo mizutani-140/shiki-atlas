@@ -1,9 +1,9 @@
 {
   "acceptance_checks": [
-    "npm run build が成功する",
-    "図生成スクリプトが .shiki/ を読んで Mermaid を出力し、コミット済みの生成物と一致する（不一致なら CI 失敗）",
-    "サイトに日本語の「GitHub: Pull Request」ページと「Shiki 内部フロー」ページが表示される",
-    "Shiki の required checks（validate / CCA / MergeGate）が green"
+    "npm run build \u304c\u6210\u529f\u3059\u308b",
+    "\u56f3\u751f\u6210\u30b9\u30af\u30ea\u30d7\u30c8\u304c .shiki/ \u3092\u8aad\u3093\u3067 Mermaid \u3092\u51fa\u529b\u3057\u3001\u30b3\u30df\u30c3\u30c8\u6e08\u307f\u306e\u751f\u6210\u7269\u3068\u4e00\u81f4\u3059\u308b\uff08\u4e0d\u4e00\u81f4\u306a\u3089 CI \u5931\u6557\uff09",
+    "\u30b5\u30a4\u30c8\u306b\u65e5\u672c\u8a9e\u306e\u300cGitHub: Pull Request\u300d\u30da\u30fc\u30b8\u3068\u300cShiki \u5185\u90e8\u30d5\u30ed\u30fc\u300d\u30da\u30fc\u30b8\u304c\u8868\u793a\u3055\u308c\u308b",
+    "Shiki \u306e required checks\uff08validate / CCA / MergeGate\uff09\u304c green"
   ],
   "assigned_runtime": "claude-code",
   "dependencies": [],
@@ -23,7 +23,8 @@
     "L-20260820T101205445269Z-5349edd9",
     "L-20260820T101834528318Z-be640cd2",
     "L-20260820T101834583680Z-51ad7561",
-    "L-20260820T101853590098Z-67ff67b6"
+    "L-20260820T101853590098Z-67ff67b6",
+    "L-20260821T003022139492Z-1d437644"
   ],
   "locks": [
     "path:**"
@@ -32,7 +33,7 @@
   "pre_pr_code_review": {
     "findings": [
       {
-        "detail": "tools/check-base-links.ts fails the build (postbuild) on any dist/ href/src starting with '/' that lacks the base prefix. It is a good guard for author-written links, but any future Starlight/pagefind/asset output that legitimately emits a root-absolute URL without base would break the build. The implementer reports `npm run build` passed locally, so this is not currently triggered — noting as a robustness watch item, not a defect.",
+        "detail": "tools/check-base-links.ts fails the build (postbuild) on any dist/ href/src starting with '/' that lacks the base prefix. It is a good guard for author-written links, but any future Starlight/pagefind/asset output that legitimately emits a root-absolute URL without base would break the build. The implementer reports `npm run build` passed locally, so this is not currently triggered \u2014 noting as a robustness watch item, not a defect.",
         "severity": "low",
         "title": "check-base-links.ts may false-positive on framework-emitted root-absolute URLs"
       },
@@ -50,8 +51,8 @@
     "code-review"
   ],
   "risk_level": "low",
-  "scope": "Astro Starlight を初期化し、(1) GitHub 機能解説ページ1本（Pull Request）と (2) .shiki/ の実データから Mermaid を生成する TypeScript スクリプト＋その図を載せた Shiki 内部フローページ1本を作成し、GitHub Actions で Pages にデプロイするところまでを端から端まで通す。",
-  "status": "ready",
+  "scope": "Astro Starlight \u3092\u521d\u671f\u5316\u3057\u3001(1) GitHub \u6a5f\u80fd\u89e3\u8aac\u30da\u30fc\u30b81\u672c\uff08Pull Request\uff09\u3068 (2) .shiki/ \u306e\u5b9f\u30c7\u30fc\u30bf\u304b\u3089 Mermaid \u3092\u751f\u6210\u3059\u308b TypeScript \u30b9\u30af\u30ea\u30d7\u30c8\uff0b\u305d\u306e\u56f3\u3092\u8f09\u305b\u305f Shiki \u5185\u90e8\u30d5\u30ed\u30fc\u30da\u30fc\u30b81\u672c\u3092\u4f5c\u6210\u3057\u3001GitHub Actions \u3067 Pages \u306b\u30c7\u30d7\u30ed\u30a4\u3059\u308b\u3068\u3053\u308d\u307e\u3067\u3092\u7aef\u304b\u3089\u7aef\u307e\u3067\u901a\u3059\u3002",
+  "status": "review",
   "test_command": "python3 -m unittest discover -s tests",
-  "title": "最初の垂直スライス: Starlight サイトを Pages に公開し、実証跡生成の図を1枚通す"
+  "title": "\u6700\u521d\u306e\u5782\u76f4\u30b9\u30e9\u30a4\u30b9: Starlight \u30b5\u30a4\u30c8\u3092 Pages \u306b\u516c\u958b\u3057\u3001\u5b9f\u8a3c\u8de1\u751f\u6210\u306e\u56f3\u30921\u679a\u901a\u3059"
 }
