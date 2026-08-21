@@ -1,0 +1,36 @@
+---
+title: Shiki Atlas
+description: GitHub の主要機能の内部動作と、Shiki の内部フローを日本語で解説するドキュメントサイト。
+template: splash
+hero:
+  tagline: GitHub の主要機能の「内部で何が起きているか」と、Shiki の内部フローを可視化する日本語ドキュメント。
+  actions:
+    - text: 'GitHub: Pull Request を読む'
+      link: /shiki-atlas/github/pull-request/
+      icon: right-arrow
+      variant: primary
+    - text: 'Shiki 内部フローを見る'
+      link: /shiki-atlas/shiki/internal-flow/
+      icon: right-arrow
+---
+
+import { Card, CardGrid } from '@astrojs/starlight/components';
+
+## このサイトについて
+
+**Shiki Atlas** は、次の 2 つを日本語で解説するドキュメントサイトです。
+
+<CardGrid>
+  <Card title="GitHub の機能解説" icon="github">
+    GitHub の主要機能について、UI 上の操作ではなく **内部で何が起きているか** を技術的に説明します。
+    最初のページは [Pull Request](/shiki-atlas/github/pull-request/) です。
+  </Card>
+  <Card title="Shiki 内部フロー" icon="puzzle">
+    Goal Seek → Context/Impact → Task DAG → Handoff → CCA → MergeGate → Repair Loop という
+    [Shiki の内部フロー](/shiki-atlas/shiki/internal-flow/) を、このリポジトリ自身の `.shiki` 実証跡から
+    **ビルド時に自動生成した Mermaid 図** で提示します。
+  </Card>
+</CardGrid>
+
+このサイト自体が Shiki の制御下で実装・レビュー・マージされており、ページ内で参照する
+Pull Request・GitHub Actions・required checks はいずれも本リポジトリの実際の証跡です。

@@ -1,0 +1,82 @@
+---
+// Client-side Mermaid renderer. The diagram text is emitted as the text content
+// of a <pre class="mermaid"> element; the bundled script renders it to SVG in
+// the browser, so `astro build` needs no headless browser.
+interface Props {
+  code: string;
+  title?: string | undefined;
+}
+const { code, title } = Astro.props;
+---
+
+<figure class="mermaid-figure">
+  {title && <figcaption class="mermaid-caption">{title}</figcaption>}
+  <pre class="mermaid">{code}</pre>
+</figure>
+
+<script>
+  import mermaid from 'mermaid';
+
+  const nodes = Array.from(document.querySelectorAll<HTMLElement>('pre.mermaid'));
+  // mermaid.run() REPLACES each element's content with the rendered SVG, so a
+  // later re-render (theme toggle) needs the original diagram text stashed first.
+  const sources = new WeakMap<HTMLElement, string>();
+  for (const node of nodes) sources.set(node, node.textContent ?? '');
+
+  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)');
+  // Starlight writes an explicit choice to `data-theme`; the OS preference only
+  // applies while no explicit choice is set.
+  const isDark = () =>
+    document.documentElement.dataset.theme === 'dark' ||
+    (!document.documentElement.dataset.theme && prefersDark.matches);
+
+  let rendered: boolean | null = null;
+
+  async function render() {
+    const dark = isDark();
+    if (dark === rendered) return;
+    rendered = dark;
+    mermaid.initialize({
+      startOnLoad: false,
+      securityLevel: 'strict',
+      theme: dark ? 'dark' : 'default',
+    });
+    for (const node of nodes) {
+      node.textContent = sources.get(node) ?? '';
+      node.removeAttribute('data-processed');
+    }
+    try {
+      await mermaid.run({ nodes });
+    } catch (error) {
+      // Leave the raw diagram source visible rather than blanking the page.
+      console.error('Mermaid rendering failed', error);
+      for (const node of nodes) node.textContent = sources.get(node) ?? '';
+    }
+  }
+
+  await render();
+
+  // Re-render on the Starlight theme toggle and on OS-level changes, so the
+  // diagram never sits in the opposite theme to the page around it.
+  new MutationObserver(() => void render()).observe(document.documentElement, {
+    attributes: true,
+    attributeFilter: ['data-theme'],
+  });
+  prefersDark.addEventListener('change', () => void render());
+</script>
+
+<style>
+  .mermaid-figure {
+    margin: 1.5rem 0;
+    overflow-x: auto;
+  }
+  .mermaid-caption {
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+  }
+  .mermaid {
+    /* Keep the pre readable before hydration; hidden overflow handled by figure. */
+    text-align: center;
+    line-height: 1.2;
+  }
+</style>

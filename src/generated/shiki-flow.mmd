@@ -1,0 +1,42 @@
+flowchart TD
+  %% Auto-generated from .shiki/ by tools/generate-shiki-diagram.ts — do not edit by hand.
+  %% Goals (.shiki/goals)
+  G_G_20260820T085729053581Z_595cfc78["🎯 Goal 595cfc78<br/>GitHub の機能別技術解説と Shiki 内部動作の可視化サイトを公開する<br/>risk: low"]
+  %% Plans / Spec Freeze (.shiki/plans)
+  P_P_20260820T085729052749Z_e6ce760a["📄 Plan e6ce760a<br/>spec_freeze: frozen"]
+  %% Task DAG (.shiki/dag + .shiki/tasks)
+  subgraph DAG_G_20260820T085729053581Z_595cfc78["Task DAG: 595cfc78"]
+    T_T_20260820T085729054418Z_368672b8["🧩 368672b8<br/>最初の垂直スライス: Starlight サイトを Pages に公開し、実証跡生成の図を1枚通す<br/>claude-code · risk: low<br/>skills: tdd, code-review<br/>acceptance checks: 4"]
+  end
+  %% Task DAG dependency edges
+  %% Planning-artifact wiring
+  G_G_20260820T085729053581Z_595cfc78 --> P_P_20260820T085729052749Z_e6ce760a
+  G_G_20260820T085729053581Z_595cfc78 --> DAG_G_20260820T085729053581Z_595cfc78
+  %% Shiki lifecycle spine (Goal Seek -> ... -> MergeGate -> Repair)
+  subgraph LIFE["Shiki 内部フロー"]
+    direction TB
+    L1["Goal Seek"]
+    L2["grill-with-docs"]
+    L3["Context & Impact"]
+    L4["PRD / Spec Freeze"]
+    L5["Task DAG"]
+    L6["Dispatch / Handoff"]
+    L7["TDD 実装"]
+    L8["code-review"]
+    L9["Pull Request"]
+    L10["CCA"]
+    L11["MergeGate"]
+    L12["Merge"]
+    L13["Repair Loop"]
+    L1 --> L2 --> L3 --> L4 --> L5 --> L6 --> L7 --> L8 --> L9 --> L10 --> L11 --> L12
+    L10 -->|repair_required| L13
+    L13 --> L6
+  end
+  %% MergeGate required checks (.shiki/config.yaml)
+  subgraph CHECKS["MergeGate required checks"]
+    CHK_0["1. Validate Shiki mirror"]
+    CHK_1["2. CCA verdict"]
+    CHK_2["3. MergeGate metadata check"]
+    CHK_3["4. MergeGate policy check"]
+  end
+  L11 --> CHECKS
