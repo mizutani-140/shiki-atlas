@@ -5,11 +5,11 @@
     "CCA verdict and MergeGate evidence are recorded before completion."
   ],
   "completion_conditions": [
-    "main \u306b\u30de\u30fc\u30b8\u3055\u308c\u305f PR \u7d4c\u7531\u3067\u30b5\u30a4\u30c8\u304c GitHub Pages \u306b\u516c\u958b\u3055\u308c\u3001\u516c\u958b URL \u304c HTTP 200 \u3092\u8fd4\u3059",
-    "GitHub \u6a5f\u80fd\u89e3\u8aac\u30da\u30fc\u30b8\u304c\u4e3b\u8981\u6a5f\u80fd\u3054\u3068\u306b\u5b58\u5728\u3057\u3001\u5404\u30da\u30fc\u30b8\u304c\u672c\u30ea\u30dd\u30b8\u30c8\u30ea\u81ea\u8eab\u306e\u5b9f PR / Actions \u5b9f\u884c / branch protection \u306e\u8a3c\u8de1\u3092\u5f15\u7528\u3057\u3066\u3044\u308b",
-    "Shiki \u53ef\u8996\u5316\u30da\u30fc\u30b8\u306e Mermaid \u56f3\u304c\u624b\u66f8\u304d\u3067\u306f\u306a\u304f .shiki/ \u306e\u5b9f\u30c7\u30fc\u30bf\u304b\u3089\u30d3\u30eb\u30c9\u6642\u306b\u751f\u6210\u3055\u308c\u3001\u751f\u6210\u7269\u306e\u30c9\u30ea\u30d5\u30c8\u3092 CI \u304c\u691c\u51fa\u3059\u308b",
-    "\u5168\u5909\u66f4\u304c Shiki \u306e CCA \u3068 MergeGate \u3092\u901a\u904e\u3057\u3066\u3044\u308b\uff08\u30ed\u30fc\u30ab\u30eb\u306e\u5b8c\u4e86\u5ba3\u8a00\u3060\u3051\u3067\u306f\u5b8c\u4e86\u3068\u3057\u306a\u3044\uff09",
-    "\u5bfe\u8c61\u30ea\u30dd\u30b8\u30c8\u30ea\u3067 shiki doctor \u304c pass \u3059\u308b"
+    "main にマージされた PR 経由でサイトが GitHub Pages に公開され、公開 URL が HTTP 200 を返す",
+    "GitHub 機能解説ページが主要機能ごとに存在し、各ページが本リポジトリ自身の実 PR / Actions 実行 / branch protection の証跡を引用している",
+    "Shiki 可視化ページの Mermaid 図が手書きではなく .shiki/ の実データからビルド時に生成され、生成物のドリフトを CI が検出する",
+    "全変更が Shiki の CCA と MergeGate を通過している（ローカルの完了宣言だけでは完了としない）",
+    "対象リポジトリで shiki doctor が pass する"
   ],
   "created_at": "2026-08-20T08:57:29+00:00",
   "github_issue": null,
@@ -31,14 +31,14 @@
     "L-20260821T005534636050Z-e7211f46"
   ],
   "non_goals": [
-    "GitHub \u306e\u5168\u6a5f\u80fd\u3092\u7db2\u7f85\u3059\u308b\u3053\u3068\uff08\u4e3b\u8981\u6a5f\u80fd\u306b\u7d5e\u308b\uff09",
-    "\u82f1\u8a9e\u7248\u30fb\u591a\u8a00\u8a9e\u5bfe\u5fdc",
-    "Shiki \u672c\u4f53\uff08mizutani-140/shiki\uff09\u306e\u30b3\u30fc\u30c9\u5909\u66f4",
-    "\u8a8d\u8a3c\u4ed8\u304d\u52d5\u7684Web\u30a2\u30d7\u30ea\u3084\u30a4\u30f3\u30bf\u30e9\u30af\u30c6\u30a3\u30d6\u64cd\u4f5cUI\u306e\u5b9f\u88c5",
-    "GitHub Enterprise \u56fa\u6709\u6a5f\u80fd\u306e\u89e3\u8aac",
-    "branch protection \u306e\u8fc2\u56de\u304a\u3088\u3073 admin merge"
+    "GitHub の全機能を網羅すること（主要機能に絞る）",
+    "英語版・多言語対応",
+    "Shiki 本体（mizutani-140/shiki）のコード変更",
+    "認証付き動的Webアプリやインタラクティブ操作UIの実装",
+    "GitHub Enterprise 固有機能の解説",
+    "branch protection の迂回および admin merge"
   ],
-  "outcome": "Astro Starlight \u88fd\u306e\u65e5\u672c\u8a9e\u30c9\u30ad\u30e5\u30e1\u30f3\u30c8\u30b5\u30a4\u30c8\u304c GitHub Pages \u3067\u516c\u958b\u3055\u308c\u3001(A) GitHub \u306e\u4e3b\u8981\u6a5f\u80fd\u3054\u3068\u306b\u5185\u90e8\u3067\u4f55\u304c\u8d77\u304d\u308b\u304b\u3092\u6280\u8853\u7684\u306b\u89e3\u8aac\u3057\u3001(B) Shiki \u306e\u5185\u90e8\u30d5\u30ed\u30fc\uff08Goal Seek \u2192 Context/Impact \u2192 Task DAG \u2192 Codex handoff \u2192 CCA \u2192 MergeGate \u2192 repair loop\uff09\u3092\u3001\u3053\u306e\u30ea\u30dd\u30b8\u30c8\u30ea\u81ea\u8eab\u306e .shiki \u5b9f\u8a3c\u8de1\u304b\u3089\u30d3\u30eb\u30c9\u6642\u306b\u81ea\u52d5\u751f\u6210\u3057\u305f Mermaid \u56f3\u3067\u63d0\u793a\u3057\u3066\u3044\u308b\u72b6\u614b\u3002",
+  "outcome": "Astro Starlight 製の日本語ドキュメントサイトが GitHub Pages で公開され、(A) GitHub の主要機能ごとに内部で何が起きるかを技術的に解説し、(B) Shiki の内部フロー（Goal Seek → Context/Impact → Task DAG → Codex handoff → CCA → MergeGate → repair loop）を、このリポジトリ自身の .shiki 実証跡からビルド時に自動生成した Mermaid 図で提示している状態。",
   "required_skills": [
     "grill-with-docs",
     "to-prd",
@@ -47,6 +47,6 @@
   ],
   "risk_level": "low",
   "source_plan": "P-20260820T085729052749Z-e6ce760a",
-  "status": "complete",
-  "title": "GitHub \u306e\u6a5f\u80fd\u5225\u6280\u8853\u89e3\u8aac\u3068 Shiki \u5185\u90e8\u52d5\u4f5c\u306e\u53ef\u8996\u5316\u30b5\u30a4\u30c8\u3092\u516c\u958b\u3059\u308b"
+  "status": "planned",
+  "title": "GitHub の機能別技術解説と Shiki 内部動作の可視化サイトを公開する"
 }

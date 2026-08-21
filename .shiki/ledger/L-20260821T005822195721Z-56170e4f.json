@@ -1,0 +1,13 @@
+{
+  "actor": "shiki-cli",
+  "evidence": [
+    "gh pr merge 3 --merge"
+  ],
+  "goal_id": "G-20260820T085729053581Z-595cfc78",
+  "id": "L-20260821T005822195721Z-56170e4f",
+  "links": [],
+  "summary": "Goal loop merged PR #3 for T-20260820T085729054418Z-368672b8 (required checks green, risk low)",
+  "task_id": "T-20260820T085729054418Z-368672b8",
+  "timestamp": "2026-08-21T00:58:22+00:00",
+  "type": "mergegate"
+}

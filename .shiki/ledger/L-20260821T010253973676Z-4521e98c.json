@@ -1,0 +1,13 @@
+{
+  "actor": "shiki-cli",
+  "evidence": [
+    ".shiki/tasks/T-20260821T010253973464Z-8a664e0f.json"
+  ],
+  "goal_id": "G-20260820T085729053581Z-595cfc78",
+  "id": "L-20260821T010253973676Z-4521e98c",
+  "links": [],
+  "summary": "Task registered: GitHub \u6a5f\u80fd\u89e3\u8aac: Actions",
+  "task_id": "T-20260821T010253973464Z-8a664e0f",
+  "timestamp": "2026-08-21T01:02:53+00:00",
+  "type": "task-registered"
+}
